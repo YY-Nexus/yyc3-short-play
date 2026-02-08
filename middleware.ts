@@ -5,7 +5,7 @@ import { verify } from "jsonwebtoken"
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production"
 
 // 公开路由（不需要登录）
-const publicRoutes = ["/", "/auth", "/auth/single-page", "/test-login"]
+const publicRoutes = ["/", "/auth", "/auth/single-page", "/test-login", "/debug-login"]
 
 // API路由（不需要中间件处理）
 const apiRoutes = ["/api"]
@@ -29,9 +29,15 @@ export function middleware(request: NextRequest) {
 
   // 检查认证token
   const token = request.cookies.get("auth_token")?.value
+  const allCookies = request.cookies.getAll()
   console.log("[v0] Token present:", !!token)
+  console.log("[v0] All cookies:", allCookies.map(c => c.name))
 
   if (!token) {
+    // 开发模式：显示更详细的调试信息
+    if (process.env.NODE_ENV === "development") {
+      console.log("[v0] No auth_token found. Available cookies:", allCookies)
+    }
     // 未登录，重定向到登录页
     console.log("[v0] No token, redirecting to /auth")
     return NextResponse.redirect(new URL("/auth", request.url))
@@ -39,12 +45,12 @@ export function middleware(request: NextRequest) {
 
   try {
     // 验证token
-    verify(token, JWT_SECRET)
-    console.log("[v0] Token valid, allowing access")
+    const decoded = verify(token, JWT_SECRET)
+    console.log("[v0] Token valid, allowing access. User:", (decoded as any).userId)
     return NextResponse.next()
   } catch (error) {
     // token无效，重定向到登录页
-    console.log("[v0] Token invalid, redirecting to /auth")
+    console.log("[v0] Token invalid:", error instanceof Error ? error.message : "unknown error")
     const response = NextResponse.redirect(new URL("/auth", request.url))
     response.cookies.delete("auth_token")
     return response
