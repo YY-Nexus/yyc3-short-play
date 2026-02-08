@@ -27,9 +27,7 @@ import {
 } from "lucide-react"
 import {
   sendVerificationCode,
-  loginUser,
   registerUser,
-  type LoginRequest,
   type RegisterRequest,
 } from "@/services/auth-service"
 import { useAuth } from "@/contexts/auth-context"
@@ -226,42 +224,24 @@ export default function SinglePageAuth() {
     setIsLoading(true)
 
     try {
-      const loginRequest: LoginRequest = {
-        phoneNumber: loginForm.phoneNumber,
-        verificationCode: loginForm.verificationCode,
-        deviceInfo: {
-          userAgent: navigator.userAgent,
-          platform: navigator.platform,
-        },
-      }
+      console.log("[v0] Starting login process")
+      
+      // 直接调用auth context的login方法
+      await login(loginForm.phoneNumber, loginForm.verificationCode)
+      
+      console.log("[v0] Login successful")
+      toast({
+        title: "登录成功！",
+        description: "欢迎使用言语平台",
+      })
 
-      const response = await loginUser(loginRequest)
-
-      if (response.success && response.user && response.token) {
-        const authSuccess = await login(loginForm.phoneNumber, loginForm.verificationCode)
-
-        if (authSuccess) {
-          toast({
-            title: "登录成功！",
-            description: response.isLocalUser ? "欢迎洛阳本地用户，您将享受专属权益" : "欢迎使用言语平台",
-          })
-
-          setTimeout(() => {
-            router.push("/profile")
-          }, 1500)
-        }
-      } else {
-        toast({
-          title: "登录失败",
-          description: response.error || "请检查验证码是否正确",
-          variant: "destructive",
-        })
-      }
+      // auth context会自动处理跳转，这里不需要再次跳转
     } catch (error) {
-      console.error("登录失败:", error)
+      console.error("[v0] Login failed:", error)
+      const errorMessage = error instanceof Error ? error.message : "登录失败"
       toast({
         title: "登录失败",
-        description: "请稍后重试",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {

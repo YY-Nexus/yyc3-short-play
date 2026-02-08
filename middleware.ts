@@ -5,7 +5,7 @@ import { verify } from "jsonwebtoken"
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production"
 
 // 公开路由（不需要登录）
-const publicRoutes = ["/", "/auth", "/auth/single-page"]
+const publicRoutes = ["/", "/auth", "/auth/single-page", "/test-login"]
 
 // API路由（不需要中间件处理）
 const apiRoutes = ["/api"]
