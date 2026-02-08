@@ -70,13 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const data = await response.json()
     console.log("[v0] Login successful, user:", data.user?.id)
+    
+    // 立即设置用户状态，避免刷新后状态丢失
     setUser(data.user)
-
-    // 使用window.location.href进行完整的页面导航，确保cookie生效
-    setTimeout(() => {
-      console.log("[v0] Redirecting to /main via window.location")
-      window.location.href = "/main"
-    }, 1500)
+    
+    // 不立即跳转，等待toast显示
+    // 登录组件负责跳转逻辑
   }
 
   async function register(username: string, phone: string, code: string) {
@@ -94,10 +93,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const data = await response.json()
     setUser(data.user)
-
-    setTimeout(() => {
-      window.location.href = "/main"
-    }, 1500)
+    
+    // 不立即跳转，等待toast显示
+    // 注册组件负责跳转逻辑
   }
 
   async function logout() {

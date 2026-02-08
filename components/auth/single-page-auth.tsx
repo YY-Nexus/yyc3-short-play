@@ -232,10 +232,14 @@ export default function SinglePageAuth() {
       console.log("[v0] Login successful")
       toast({
         title: "登录成功！",
-        description: "欢迎使用言语平台",
+        description: "正在进入系统...",
       })
 
-      // auth context会自动处理跳转，这里不需要再次跳转
+      // 等待toast显示，然后跳转到主页
+      setTimeout(() => {
+        console.log("[v0] Redirecting to /main")
+        router.push("/main")
+      }, 1000)
     } catch (error) {
       console.error("[v0] Login failed:", error)
       const errorMessage = error instanceof Error ? error.message : "登录失败"
