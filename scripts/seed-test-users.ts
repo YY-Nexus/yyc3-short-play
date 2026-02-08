@@ -6,22 +6,29 @@ async function seedTestUsers() {
 
   const testUsers = [
     {
-      username: "管理员",
+      username: "测试用户",
       phone: "13800138000",
+      email: "test@0379.email",
+      password: "Test@123456",
+      is_local_user: true,
+    },
+    {
+      username: "管理员",
+      phone: "13700000001",
       email: "admin@0379.email",
       password: "Admin@2024",
       is_local_user: true,
     },
     {
       username: "张三",
-      phone: "13700000001",
+      phone: "13700000002",
       email: "zhangsan@0379.email",
       password: "User@123456",
       is_local_user: true,
     },
     {
       username: "李四",
-      phone: "18600000002",
+      phone: "18600000003",
       email: "lisi@example.com",
       password: "User@123456",
       is_local_user: false,

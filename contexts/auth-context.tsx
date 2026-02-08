@@ -51,22 +51,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function login(phone: string, code: string) {
+    console.log("[v0] Auth context login called:", { phone, code })
+    
     const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone, code }),
     })
 
+    console.log("[v0] Login response status:", response.status)
+
     if (!response.ok) {
       const error = await response.json()
+      console.error("[v0] Login failed:", error)
       throw new Error(error.error || "登录失败")
     }
 
     const data = await response.json()
+    console.log("[v0] Login successful, user:", data.user?.id)
     setUser(data.user)
 
     // 延迟跳转，显示成功提示
     setTimeout(() => {
+      console.log("[v0] Redirecting to /main")
       router.push("/main")
     }, 1500)
   }
