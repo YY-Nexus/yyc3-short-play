@@ -60,10 +60,12 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
+      path: "/",
       maxAge: 60 * 60 * 24 * 7, // 7天
     })
 
     console.log("[v0] Login successful for user:", user.id)
+    console.log("[v0] Cookie set with token")
     return response
   } catch (error) {
     console.error("[v0] Login error:", error)

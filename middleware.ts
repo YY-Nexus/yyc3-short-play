@@ -13,30 +13,38 @@ const apiRoutes = ["/api"]
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  console.log("[v0] Middleware checking:", pathname)
+
   // 跳过API路由
   if (apiRoutes.some((route) => pathname.startsWith(route))) {
+    console.log("[v0] API route, allowing")
     return NextResponse.next()
   }
 
   // 公开路由直接通过
   if (publicRoutes.includes(pathname)) {
+    console.log("[v0] Public route, allowing")
     return NextResponse.next()
   }
 
   // 检查认证token
   const token = request.cookies.get("auth_token")?.value
+  console.log("[v0] Token present:", !!token)
 
   if (!token) {
     // 未登录，重定向到登录页
+    console.log("[v0] No token, redirecting to /auth")
     return NextResponse.redirect(new URL("/auth", request.url))
   }
 
   try {
     // 验证token
     verify(token, JWT_SECRET)
+    console.log("[v0] Token valid, allowing access")
     return NextResponse.next()
   } catch (error) {
     // token无效，重定向到登录页
+    console.log("[v0] Token invalid, redirecting to /auth")
     const response = NextResponse.redirect(new URL("/auth", request.url))
     response.cookies.delete("auth_token")
     return response

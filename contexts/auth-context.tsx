@@ -57,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone, code }),
+      credentials: "include", // 确保cookie被正确处理
     })
 
     console.log("[v0] Login response status:", response.status)
@@ -71,10 +72,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log("[v0] Login successful, user:", data.user?.id)
     setUser(data.user)
 
-    // 延迟跳转，显示成功提示
+    // 使用window.location.href进行完整的页面导航，确保cookie生效
     setTimeout(() => {
-      console.log("[v0] Redirecting to /main")
-      router.push("/main")
+      console.log("[v0] Redirecting to /main via window.location")
+      window.location.href = "/main"
     }, 1500)
   }
 
@@ -83,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, phone, code }),
+      credentials: "include", // 确保cookie被正确处理
     })
 
     if (!response.ok) {
@@ -94,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user)
 
     setTimeout(() => {
-      router.push("/main")
+      window.location.href = "/main"
     }, 1500)
   }
 
