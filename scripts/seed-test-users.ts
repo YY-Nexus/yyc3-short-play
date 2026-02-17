@@ -1,5 +1,6 @@
 import { createUser } from "@/lib/models/user.model"
 import { query } from "@/lib/db"
+import type { RowDataPacket } from "mysql2"
 
 async function seedTestUsers() {
   console.log("🌱 开始创建测试用户...")
@@ -32,7 +33,8 @@ async function seedTestUsers() {
     for (const userData of testUsers) {
       try {
         // 检查用户是否已存在
-        const [existing] = await query<any[]>("SELECT id FROM users WHERE phone = ?", [userData.phone])
+        const rows = await query<RowDataPacket[]>("SELECT id FROM users WHERE phone = ?", [userData.phone])
+        const existing = Array.isArray(rows) && rows.length > 0 ? rows[0] : null
 
         if (existing) {
           console.log(`⏭️  用户 ${userData.username} (${userData.phone}) 已存在，跳过`)

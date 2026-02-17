@@ -233,7 +233,7 @@ export default function AuthForm() {
         await new Promise((resolve) => setTimeout(resolve, 1500))
 
         // 更新Context中的用户状态（用于全局状态管理）
-        // 这里不再依赖Context的login函数返回值
+        // 这里不再依赖Context的login��数返回值
         
         console.log("[v0] handleLogin: 执行路由跳转...")
         router.push("/main")
@@ -258,14 +258,92 @@ export default function AuthForm() {
     }
   }
 
-    if (verificationCode.length !== 6) {
+  // 密码登录
+  const handlePasswordLogin = async () => {
+    if (!phoneNumber || !password) {
       toast({
-        title: "验证码格式错误",
-        description: "验证码应为6位数字",
+        title: "信息不完整",
+        description: "请输入手机号和密码",
         variant: "destructive",
       })
       return
     }
+
+    if (phoneNumber.length !== 11) {
+      toast({
+        title: "手机号格式错误",
+        description: "请输入11位手机号",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setLoginStatus("logging")
+    setIsLoading(true)
+
+    try {
+      console.log("[v0] handlePasswordLogin: 开始密码登录...", { phone: phoneNumber })
+
+      const apiResponse = await fetch("/api/auth/login-with-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phone: phoneNumber,
+          password,
+        }),
+      })
+
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json()
+        throw new Error(errorData.error || "登录失败")
+      }
+
+      const apiData = await apiResponse.json()
+
+      if (apiData.success && apiData.user) {
+        setLoginStatus("success")
+
+        const isLocal = phoneNumber.startsWith("137") || phoneNumber.startsWith("138") || phoneNumber.startsWith("139")
+
+        toast({
+          title: "登录成功！",
+          description: isLocal ? "欢迎洛阳本地用户，您将获得专属权益" : "欢迎使用言语平台",
+        })
+
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+        router.push("/main")
+
+        setTimeout(() => {
+          router.refresh()
+        }, 500)
+      } else {
+        throw new Error(apiData.error || "登录验证失败")
+      }
+    } catch (error: any) {
+      console.error("[v0] handlePasswordLogin: 登录失败 =", error.message)
+      toast({
+        title: "登录失败",
+        description: error.message || "请检查手机号和密码",
+        variant: "destructive",
+      })
+      setLoginStatus("error")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // 重置表单
+  const resetForm = () => {
+    setPhoneNumber("")
+    setVerificationCode("")
+    setPassword("")
+    setIsCodeSent(false)
+    setCountdown(0)
+    setIsLocalNumber(null)
+    setLoginStatus("idle")
+  }
 
     setLoginStatus("logging")
     setIsLoading(true)
@@ -333,10 +411,14 @@ export default function AuthForm() {
             <h2 className="text-2xl font-bold text-white mb-6">用户登录</h2>
 
             <Tabs defaultValue="phone" value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsList className="grid w-full grid-cols-3 mb-8">
                 <TabsTrigger value="phone" className="data-[state=active]:bg-blue-600">
                   <Phone className="h-4 w-4 mr-2" />
-                  手机号登录
+                  验证码登录
+                </TabsTrigger>
+                <TabsTrigger value="password" className="data-[state=active]:bg-blue-600">
+                  <LogIn className="h-4 w-4 mr-2" />
+                  密码登录
                 </TabsTrigger>
                 <TabsTrigger value="qrcode" className="data-[state=active]:bg-blue-600">
                   <QrCode className="h-4 w-4 mr-2" />
@@ -470,6 +552,95 @@ export default function AuthForm() {
                     className="w-full border-blue-500/30 text-blue-300 hover:bg-blue-500/10 bg-transparent"
                   >
                     重新开始
+                  </Button>
+                )}
+
+                <div className="text-center text-white/50 text-sm">登录即表示您同意《用户协议》和《隐私政策》</div>
+              </TabsContent>
+
+              <TabsContent value="password" className="space-y-4">
+                {/* 登录状态指示器 */}
+                {loginStatus !== "idle" && (
+                  <div
+                    className={`p-3 rounded-md flex items-center ${
+                      loginStatus === "success"
+                        ? "bg-green-900/20 border border-green-500/30 text-green-300"
+                        : loginStatus === "error"
+                          ? "bg-red-900/20 border border-red-500/30 text-red-300"
+                          : "bg-blue-900/20 border border-blue-500/30 text-blue-300"
+                    }`}
+                  >
+                    {loginStatus === "success" ? (
+                      <CheckCircle className="h-5 w-5 mr-2" />
+                    ) : loginStatus === "error" ? (
+                      <AlertCircle className="h-5 w-5 mr-2" />
+                    ) : (
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    )}
+                    <span>
+                      {loginStatus === "logging" && "正在登录..."}
+                      {loginStatus === "success" && "登录成功，即将跳转..."}
+                      {loginStatus === "error" && "操作失败，请重试"}
+                    </span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-white/70 text-sm block mb-2">手机号</label>
+                  <div className="flex">
+                    <div className="flex items-center bg-black/60 border border-blue-500/30 rounded-l-md px-3">
+                      <span className="text-white">+86</span>
+                    </div>
+                    <Input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="请输入手机号"
+                      maxLength={11}
+                      disabled={isLoading}
+                      className="flex-grow bg-black/60 border-blue-500/30 focus-visible:ring-blue-500/50 text-white rounded-l-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-white/70 text-sm block mb-2">密码</label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="请输入密码"
+                    disabled={isLoading}
+                    className="bg-black/60 border-blue-500/30 focus-visible:ring-blue-500/50 text-white"
+                  />
+                </div>
+
+                <Button
+                  onClick={handlePasswordLogin}
+                  disabled={!phoneNumber || !password || isLoading || loginStatus === "logging"}
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800"
+                >
+                  {isLoading && loginStatus === "logging" ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      登录中...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="h-4 w-4 mr-2" />
+                      立即登录
+                    </>
+                  )}
+                </Button>
+
+                {/* 重置按钮 */}
+                {loginStatus === "error" && (
+                  <Button
+                    variant="outline"
+                    onClick={resetForm}
+                    className="w-full border-blue-500/30 text-blue-300 hover:bg-blue-500/10 bg-transparent"
+                  >
+                    清空重试
                   </Button>
                 )}
 
