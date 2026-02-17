@@ -70,6 +70,7 @@ export default function AuthForm() {
   const [activeTab, setActiveTab] = useState("phone")
   const [phoneNumber, setPhoneNumber] = useState("")
   const [verificationCode, setVerificationCode] = useState("")
+  const [password, setPassword] = useState("")
   const [isCodeSent, setIsCodeSent] = useState(false)
   const [countdown, setCountdown] = useState(0)
   const [isLocalNumber, setIsLocalNumber] = useState<boolean | null>(null)
@@ -366,7 +367,7 @@ export default function AuthForm() {
                       {loginStatus === "sending" && "正在发送验证码..."}
                       {loginStatus === "logging" && "正在登录..."}
                       {loginStatus === "success" && "登录成功，即将跳转..."}
-                      {loginStatus === "error" && "操作失败，请重试"}
+                      {loginStatus === "error" && "���作失败，请重试"}
                     </span>
                   </div>
                 )}
