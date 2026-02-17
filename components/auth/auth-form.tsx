@@ -108,6 +108,8 @@ export default function AuthForm() {
     setIsLoading(true)
 
     try {
+      console.log("[v0] sendCode: 发送验证码请求...", { phone: phoneNumber })
+
       const response = await fetch("/api/auth/send-code", {
         method: "POST",
         headers: {
@@ -119,7 +121,10 @@ export default function AuthForm() {
         }),
       })
 
+      console.log("[v0] sendCode: API响应状态 =", response.status)
+
       const data = await response.json()
+      console.log("[v0] sendCode: API响应数据 =", { success: data.success, message: data.message })
 
       if (response.ok && data.success) {
         setIsCodeSent(true)
@@ -128,6 +133,11 @@ export default function AuthForm() {
         // 检查是否为洛阳本地号码
         const isLocal = phoneNumber.startsWith("137") || phoneNumber.startsWith("138") || phoneNumber.startsWith("139")
         setIsLocalNumber(isLocal)
+
+        // 开发环境下显示验证码
+        if (data.code) {
+          console.log("[v0] sendCode: 开发模式验证码 =", data.code)
+        }
 
         toast({
           title: "验证码发送成功",
@@ -138,13 +148,13 @@ export default function AuthForm() {
       } else {
         toast({
           title: "验证码发送失败",
-          description: data.message || "请稍后重试",
+          description: data.message || data.error || "请稍后重试",
           variant: "destructive",
         })
         setLoginStatus("error")
       }
     } catch (error) {
-      console.error("发送验证码失败:", error)
+      console.error("[v0] sendCode: 异常 =", error)
       toast({
         title: "网络错误",
         description: "请检查网络连接后重试",
@@ -180,6 +190,86 @@ export default function AuthForm() {
     setIsLoading(true)
 
     try {
+      console.log("[v0] handleLogin: 开始登录流程...", { phone: phoneNumber, code: "***" })
+
+      // 首先直接调用API获取响应
+      const apiResponse = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phone: phoneNumber,
+          code: verificationCode,
+        }),
+      })
+
+      console.log("[v0] handleLogin: API响应状态 =", apiResponse.status)
+
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json()
+        console.error("[v0] handleLogin: API返回错误 =", errorData)
+        throw new Error(errorData.error || "登录失败")
+      }
+
+      const apiData = await apiResponse.json()
+      console.log("[v0] handleLogin: API成功返回 =", { success: apiData.success, hasUser: !!apiData.user })
+
+      if (apiData.success && apiData.user) {
+        // API成功，直接使用API返回的数据，不再调用Context的login
+        setLoginStatus("success")
+
+        const isLocal = phoneNumber.startsWith("137") || phoneNumber.startsWith("138") || phoneNumber.startsWith("139")
+
+        toast({
+          title: "登录成功！",
+          description: isLocal ? "欢迎洛阳本地用户，您将获得专属权益" : "欢迎使用言语平台",
+        })
+
+        console.log("[v0] handleLogin: 登录成功，3秒后跳转到主页...")
+
+        // 延迟跳转，让用户看到成功提示
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+
+        // 更新Context中的用户状态（用于全局状态管理）
+        // 这里不再依赖Context的login函数返回值
+        
+        console.log("[v0] handleLogin: 执行路由跳转...")
+        router.push("/main")
+        
+        // 强制刷新以确保状态更新
+        setTimeout(() => {
+          router.refresh()
+        }, 500)
+      } else {
+        throw new Error(apiData.error || "登录验证失败")
+      }
+    } catch (error: any) {
+      console.error("[v0] handleLogin: 登录失败 =", error.message)
+      toast({
+        title: "登录失败",
+        description: error.message || "请检查验证码是否正确",
+        variant: "destructive",
+      })
+      setLoginStatus("error")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+    if (verificationCode.length !== 6) {
+      toast({
+        title: "验证码格式错误",
+        description: "验证码应为6位数字",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setLoginStatus("logging")
+    setIsLoading(true)
+
+    try {
       console.log("🔐 开始登录流程...", { phoneNumber, verificationCode })
 
       const authSuccess = await login(phoneNumber, verificationCode)
@@ -193,7 +283,7 @@ export default function AuthForm() {
 
         toast({
           title: "登录成功！",
-          description: isLocal ? "欢迎洛阳本地用户，您将享受专属权益" : "欢迎使用言语平台",
+          description: isLocal ? "欢迎洛阳本地用户，您将��受专属权益" : "欢迎使用言语平台",
         })
 
         // 延迟跳转，让用户看到成功提示

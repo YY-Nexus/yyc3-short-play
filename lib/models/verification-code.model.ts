@@ -76,15 +76,26 @@ export async function verifyCode(
     LIMIT 1
   `
 
-  const [rows] = await query<RowDataPacket[]>(sql, [contact, code, type])
+  const rows = await query<RowDataPacket[]>(sql, [contact, code, type])
 
-  if (!rows) {
+  console.log("[v0] verifyCode: 查询参数 =", { contact, code: "***", type })
+  console.log("[v0] verifyCode: 查询结果行数 =", Array.isArray(rows) ? rows.length : 0)
+
+  // rows是数组，需要取第一个元素
+  const result = Array.isArray(rows) && rows.length > 0 ? rows[0] : null
+
+  if (!result) {
+    console.log("[v0] verifyCode: 验证码无效或已过期")
     return false
   }
 
+  console.log("[v0] verifyCode: 找到有效验证码，id =", (result as any).id)
+
   // 标记验证码为已使用
   const updateSql = "UPDATE verification_codes SET used = TRUE WHERE id = ?"
-  await query(updateSql, [(rows as any).id])
+  await query(updateSql, [(result as any).id])
+
+  console.log("[v0] verifyCode: 验证码已标记为已使用")
 
   return true
 }

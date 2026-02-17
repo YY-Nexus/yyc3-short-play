@@ -50,25 +50,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function login(phone: string, code: string) {
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone, code }),
-    })
+  async function login(phone: string, code: string): Promise<boolean> {
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, code }),
+      })
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || "登录失败")
+      console.log("[v0] 登录API响应状态:", response.status)
+
+      if (!response.ok) {
+        const error = await response.json()
+        console.error("[v0] 登录API错误:", error)
+        throw new Error(error.error || "登录失败")
+      }
+
+      const data = await response.json()
+      console.log("[v0] 登录API成功返回用户数据:", data)
+
+      if (data.user) {
+        setUser(data.user)
+        console.log("[v0] 用户状态已更新:", data.user)
+        return true
+      } else {
+        throw new Error("未返回用户数据")
+      }
+    } catch (error: any) {
+      console.error("[v0] Context登录异常:", error.message)
+      throw error
     }
-
-    const data = await response.json()
-    setUser(data.user)
-
-    // 延迟跳转，显示成功提示
-    setTimeout(() => {
-      router.push("/main")
-    }, 1500)
   }
 
   async function register(username: string, phone: string, code: string) {
